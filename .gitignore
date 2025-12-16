@@ -1,0 +1,61 @@
+# =============== #
+# Unity generated #
+# =============== #
+
+[Dd]ebug/
+[Ll]ibrary/
+[Bb]uilds/
+[Oo]bj/
+[Ll]ogs/
+[Tt]emp/
+[Uu]nityPackageManager/
+[Aa]ssets/[Gg]it[Ii]gnore/
+[Aa]ssets/[Gg]it[Ii]gnore.meta
+/Files
+
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+
+.vs/
+.consulo/
+ExportedObj/
+
+*.vs
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.opendb
+
+# ========================== #
+# Unity generated meta files #
+# ========================== #
+
+*.pidb.meta
+*.pdb.meta
+
+# ===================================== #
+# Unity generated File On Crash Reports #
+# ===================================== #
+
+sysinfo.txt
+
+# ====== #
+# Builds #
+# ====== #
+
+*.apk
+*.unitypackage
+product_runner/UserSettings
+
+product_runner/Assets/fonts/Silkscreen-Regular SDF.asset
+
+product_runner/.utmp/

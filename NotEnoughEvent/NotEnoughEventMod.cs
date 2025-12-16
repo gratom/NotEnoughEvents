@@ -4,15 +4,12 @@ using System.Collections.ObjectModel;
 using Modding;
 using Modding.Blocks;
 using Modding.Common;
+using Modding.Modules;
+using NEE.Blocks;
 using UnityEngine;
 
 namespace NEE
 {
-    public static class Messages
-    {
-        public static MessageType TimerMessage;
-    }
-
     public class Mod : ModEntryPoint
     {
         private GameObject loader;
@@ -25,11 +22,21 @@ namespace NEE
                 return;
             }
 
+            InitModules();
+
             loader = new GameObject("NotEnoughEvent");
             UnityEngine.Object.DontDestroyOnLoad(loader);
             MainEventer eventer = loader.AddComponent<MainEventer>();
             StringConsoleGui gui = loader.AddComponent<StringConsoleGui>();
             eventer.gui = gui;
+        }
+
+        private void InitModules()
+        {
+            CustomModules.AddBlockModule<MyKeyModule, MyKeyModuleBehaviour>(
+                "MyKeyModule",
+                false
+            );
         }
     }
 
@@ -45,8 +52,8 @@ namespace NEE
             Events.OnSimulationToggle += EventsOnSimulationToggle;
             Events.OnPlayerJoin += UpdatePlayers;
             Events.OnPlayerLeave += UpdatePlayers;
-            Events.OnBlockPlaced += UpdateBlocksCost;
-            Events.OnBlockRemoved += UpdateBlocksCost;
+            Events.OnBlockPlaced += block => UpdateBlocksCost(block, false);
+            Events.OnBlockRemoved += block => UpdateBlocksCost(block, true);
         }
 
         private static List<Player> players;
@@ -56,13 +63,14 @@ namespace NEE
             players = Player.GetAllPlayers();
         }
 
-        private void UpdateBlocksCost(Block _)
+        private void UpdateBlocksCost(Block blck, bool isRemoving)
         {
             float sumGold = 0;
             float sumSteel = 0;
             float sumWood = 0;
             float sumFuel = 0;
             float sumFabric = 0;
+            float sumFuelCount = 0;
 
             //update Cost and UI
             if (!StatMaster.isMP)
@@ -73,8 +81,9 @@ namespace NEE
             {
                 Multiplayer();
             }
+
             //smth else
-            
+
 
             void Solo()
             {
@@ -104,17 +113,42 @@ namespace NEE
 
             void ProceedBlockByType(int type, string blockName)
             {
-                if (Consts.BlocksDict.TryGetValue(type, out BlockCost b))
+                BlockCost b;
+                if (Consts.BlocksDict.TryGetValue(type, out b))
                 {
+                    AddValues();
+                }
+                else
+                {
+                    //try block name
+                    if (blockName.Contains(Consts.ModID))
+                    {
+                        string str = blockName.Substring(blockName.Length - 4);
+                        if (int.TryParse(str, out type))
+                        {
+                            if (Consts.BlocksDict.TryGetValue(type, out b))
+                            {
+                                AddValues();
+                                return;
+                            }
+                        }
+                    }
+                    Debug.Log($"unknown block type: {type} -> {blockName}");
+                }
+
+                void AddValues()
+                {
+                    if (isRemoving && type == blck.Prefab.Type)
+                    {
+                        isRemoving = false;
+                        return;
+                    }
                     sumGold += b.costGold;
                     sumSteel += b.costSteel;
                     sumWood += b.costWood;
                     sumFuel += b.costFuel;
                     sumFabric += b.costFabric;
-                }
-                else
-                {
-                    ToDebug($"unknown block type: {type} -> {blockName}");
+                    sumFuelCount += b.fuelCount;
                 }
             }
 
@@ -124,8 +158,9 @@ namespace NEE
                        $"<color=#FFD700>Gold:</color> {sumGold}\n" +
                        $"<color=#B0B0B0>Steel:</color> {sumSteel}\n" +
                        $"<color=#3b2715>Wood:</color> {sumWood}\n" +
-                       $"<color=#FF6A00>Fuel:</color> {sumFuel}\n" +
-                       $"<color=#C0A0FF>Fabric:</color> {sumFabric}";
+                       $"<color=#FF6A00>Fuel consumption:</color> {sumFuel}\n" +
+                       $"<color=#C0A0FF>Fabric:</color> {sumFabric}\n" +
+                       $"<color=#ff984f>Fuel count:</color> {sumFuelCount}\n";
             }
         }
 
@@ -181,7 +216,7 @@ namespace NEE
     {
         public override string Name => "StringConsoleGui";
 
-        private Rect windowRect = new Rect(0, 80, 250, 150);
+        private Rect windowRect = new Rect(0, 80, 250, 170);
         private int windowID;
 
         private string currentText = string.Empty;
@@ -216,7 +251,7 @@ namespace NEE
                 windowID,
                 windowRect,
                 DrawWindow,
-                "Console"
+                "Machine state"
             );
         }
 
@@ -235,10 +270,13 @@ namespace NEE
         public int costWood;
         public int costFabric;
         public float costFuel;
+        public float fuelCount;
     }
 
     public static class Consts
     {
+        public const string ModID = "1bf3a164-b945-4dcf-8238-364dea7d30e4";
+
         public static Dictionary<int, BlockCost> BlocksDict = new Dictionary<int, BlockCost>()
         {
             { 0, new BlockCost() { type = 0, costGold = 0, costSteel = 0, costWood = 0, costFabric = 0, costFuel = 0 } }, // Starting Block 
@@ -248,21 +286,21 @@ namespace NEE
             { 63, new BlockCost() { type = 63, costGold = 3, costSteel = 0, costWood = 3, costFabric = 0, costFuel = 0 } }, // Log 
             { 7, new BlockCost() { type = 7, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Brace 
             { 12, new BlockCost() { type = 12, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Smooth Surface Block 
-            { 28, new BlockCost() { type = 28, costGold = 10, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.002f } }, // Steering Hinge 
-            { 13, new BlockCost() { type = 13, costGold = 10, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.002f } }, // Steering Block 
-            { 2, new BlockCost() { type = 2, costGold = 4, costSteel = 0, costWood = 2, costFabric = 0, costFuel = 0.01f } }, // Powered Wheel 
+            { 28, new BlockCost() { type = 28, costGold = 10, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.2f } }, // Steering Hinge 
+            { 13, new BlockCost() { type = 13, costGold = 10, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.2f } }, // Steering Block 
+            { 2, new BlockCost() { type = 2, costGold = 4, costSteel = 0, costWood = 2, costFabric = 0, costFuel = 1f } }, // Powered Wheel 
             { 40, new BlockCost() { type = 40, costGold = 2, costSteel = 0, costWood = 1, costFabric = 0, costFuel = 0 } }, // Unpowered Wheel 
-            { 46, new BlockCost() { type = 46, costGold = 7, costSteel = 0, costWood = 3, costFabric = 0, costFuel = 0.02f } }, // Powered Large Wheel 
+            { 46, new BlockCost() { type = 46, costGold = 7, costSteel = 0, costWood = 3, costFabric = 0, costFuel = 2f } }, // Powered Large Wheel 
             { 60, new BlockCost() { type = 60, costGold = 4, costSteel = 0, costWood = 2, costFabric = 0, costFuel = 0 } }, // Unpowered Large Wheel 
             { 50, new BlockCost() { type = 50, costGold = 1, costSteel = 0, costWood = 1, costFabric = 0, costFuel = 0 } }, // Small Wheel 
             { 38, new BlockCost() { type = 38, costGold = 3, costSteel = 1, costWood = 2, costFabric = 0, costFuel = 0 } }, // Unpowered Cog 
-            { 39, new BlockCost() { type = 39, costGold = 6, costSteel = 2, costWood = 1, costFabric = 0, costFuel = 0.01f } }, // Powered Cog 
+            { 39, new BlockCost() { type = 39, costGold = 6, costSteel = 2, costWood = 1, costFabric = 0, costFuel = 1f } }, // Powered Cog 
             { 51, new BlockCost() { type = 51, costGold = 5, costSteel = 2, costWood = 2, costFabric = 0, costFuel = 0 } }, // Unpowered Large Cog 
             { 19, new BlockCost() { type = 19, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Swivel Joint 
             { 5, new BlockCost() { type = 5, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Hinge 
             { 44, new BlockCost() { type = 44, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Ball Joint 
             { 76, new BlockCost() { type = 76, costGold = 6, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Axle Linkage 
-            { 22, new BlockCost() { type = 22, costGold = 8, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.002f } }, // Spinning Block 
+            { 22, new BlockCost() { type = 22, costGold = 8, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.2f } }, // Spinning Block 
             { 16, new BlockCost() { type = 16, costGold = 7, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0 } }, // Suspension 
             { 42, new BlockCost() { type = 42, costGold = 3, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0 } }, // Slider 
             { 4, new BlockCost() { type = 4, costGold = 4, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Decoupler 
@@ -272,15 +310,15 @@ namespace NEE
             { 45, new BlockCost() { type = 45, costGold = 6, costSteel = 0, costWood = 2, costFabric = 1, costFuel = 0 } }, // Winch 
             { 20, new BlockCost() { type = 20, costGold = 2, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Metal Spike 
             { 3, new BlockCost() { type = 3, costGold = 2, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Metal Blade 
-            { 17, new BlockCost() { type = 17, costGold = 5, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.005f } }, // Circular Saw 
+            { 17, new BlockCost() { type = 17, costGold = 5, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0.5f } }, // Circular Saw 
             { 11, new BlockCost() { type = 11, costGold = 10, costSteel = 3, costWood = 0, costFabric = 0, costFuel = 0 } }, // Cannon 
-            { 48, new BlockCost() { type = 48, costGold = 10, costSteel = 3, costWood = 0, costFabric = 0, costFuel = 0.005f } }, // Drill 
+            { 48, new BlockCost() { type = 48, costGold = 10, costSteel = 3, costWood = 0, costFabric = 0, costFuel = 0.5f } }, // Drill 
             { 77, new BlockCost() { type = 77, costGold = 6, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0 } }, // Metal Jaw 
             { 53, new BlockCost() { type = 53, costGold = 10, costSteel = 2, costWood = 0, costFabric = 0, costFuel = 0 } }, // Shrapnel Cannon 
             { 61, new BlockCost() { type = 61, costGold = 6, costSteel = 1, costWood = 2, costFabric = 1, costFuel = 0 } }, // Crossbow 
             { 21, new BlockCost() { type = 21, costGold = 6, costSteel = 2, costWood = 1, costFabric = 0, costFuel = 0 } }, // Flamethrower 
             { 62, new BlockCost() { type = 62, costGold = 6, costSteel = 1, costWood = 0, costFabric = 2, costFuel = 0 } }, // Vacuum 
-            { 56, new BlockCost() { type = 56, costGold = 10, costSteel = 2, costWood = 1, costFabric = 0, costFuel = 0.005f } }, // Water Cannon 
+            { 56, new BlockCost() { type = 56, costGold = 10, costSteel = 2, costWood = 1, costFabric = 0, costFuel = 0.5f } }, // Water Cannon 
             { 47, new BlockCost() { type = 47, costGold = 3, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Torch 
             { 23, new BlockCost() { type = 23, costGold = 15, costSteel = 0, costWood = 0, costFabric = 0, costFuel = 0 } }, // Bomb 
             { 54, new BlockCost() { type = 54, costGold = 10, costSteel = 0, costWood = 0, costFabric = 0, costFuel = 0 } }, // Remote Grenade 
@@ -297,14 +335,15 @@ namespace NEE
             { 37, new BlockCost() { type = 37, costGold = 4, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Half Pipe 
             { 30, new BlockCost() { type = 30, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Holder 
             { 6, new BlockCost() { type = 6, costGold = 4, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Spike Ball 
-            { 14, new BlockCost() { type = 14, costGold = 8, costSteel = 0, costWood = 1, costFabric = 2, costFuel = 0.012f } }, // Flying Block 
+            { 14, new BlockCost() { type = 14, costGold = 8, costSteel = 0, costWood = 1, costFabric = 2, costFuel = 1.2f } }, // Flying Block 
             { 26, new BlockCost() { type = 26, costGold = 3, costSteel = 0, costWood = 2, costFabric = 0, costFuel = 0 } }, // Propeller 
             { 55, new BlockCost() { type = 55, costGold = 2, costSteel = 0, costWood = 1, costFabric = 0, costFuel = 0 } }, // Small Propeller 
             { 25, new BlockCost() { type = 25, costGold = 6, costSteel = 1, costWood = 1, costFabric = 3, costFuel = 0 } }, // Wing 
             { 34, new BlockCost() { type = 34, costGold = 4, costSteel = 0, costWood = 1, costFabric = 3, costFuel = 0 } }, // Wing Panel 
             { 35, new BlockCost() { type = 35, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Ballast 
+            { 1050, new BlockCost() { type = 1050, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0, fuelCount = 1000 } }, // fuel tank
             { 43, new BlockCost() { type = 43, costGold = 3, costSteel = 0, costWood = 0, costFabric = 2, costFuel = 0 } }, // Balloon 
-            { 74, new BlockCost() { type = 74, costGold = 30, costSteel = 0, costWood = 3, costFabric = 15, costFuel = 0.035f } }, // Hot Air Balloon 
+            { 74, new BlockCost() { type = 74, costGold = 30, costSteel = 0, costWood = 3, costFabric = 15, costFuel = 3.5f } }, // Hot Air Balloon 
             { 65, new BlockCost() { type = 65, costGold = 6, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0 } }, // Sensor 
             { 66, new BlockCost() { type = 66, costGold = 6, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0 } }, // Timer 
             { 67, new BlockCost() { type = 67, costGold = 6, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0 } }, // Altimeter 
@@ -321,10 +360,10 @@ namespace NEE
             { 87, new BlockCost() { type = 87, costGold = 6, costSteel = 2, costWood = 1, costFabric = 0, costFuel = 0 } }, // bouncy pad
             { 89, new BlockCost() { type = 89, costGold = 4, costSteel = 0, costWood = 1, costFabric = 1, costFuel = 0 } }, // drag block
             { 85, new BlockCost() { type = 85, costGold = 3, costSteel = 0, costWood = 3, costFabric = 0, costFuel = 0 } }, // wooden corner block
-            { 82, new BlockCost() { type = 82, costGold = 3, costSteel = 0, costWood = 3, costFabric = 0, costFuel = 0.001f } }, // buoyancy (smol)
-            { 83, new BlockCost() { type = 83, costGold = 12, costSteel = 0, costWood = 10, costFabric = 0, costFuel = 0.003f } }, // buoyancy (big)
-            { 79, new BlockCost() { type = 83, costGold = 4, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0.002f } }, //rudder (морской руль)
-            { 80, new BlockCost() { type = 80, costGold = 4, costSteel = 0, costWood = 2, costFabric = 0, costFuel = 0.01f } }, //nautical screw
+            { 82, new BlockCost() { type = 82, costGold = 3, costSteel = 0, costWood = 3, costFabric = 0, costFuel = 0.1f } }, // buoyancy (smol)
+            { 83, new BlockCost() { type = 83, costGold = 12, costSteel = 0, costWood = 10, costFabric = 0, costFuel = 0.3f } }, // buoyancy (big)
+            { 79, new BlockCost() { type = 83, costGold = 4, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0.2f } }, //rudder (морской руль)
+            { 80, new BlockCost() { type = 80, costGold = 4, costSteel = 0, costWood = 2, costFabric = 0, costFuel = 1f } }, //nautical screw
             { 81, new BlockCost() { type = 81, costGold = 1, costSteel = 0, costWood = 1, costFabric = 0, costFuel = 0 } }, //paddle (весло)
             { 78, new BlockCost() { type = 78, costGold = 12, costSteel = 1, costWood = 4, costFabric = 10, costFuel = 0 } }, //Sail
             { 84, new BlockCost() { type = 84, costGold = 10, costSteel = 3, costWood = 3, costFabric = 0, costFuel = 0 } } //harpoon

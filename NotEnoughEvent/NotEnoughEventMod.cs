@@ -91,7 +91,15 @@ namespace NEE
                 for (int i = 0; i < blocks.Count; i++)
                 {
                     BlockBehaviour block = blocks[i];
-                    ProceedBlockByType((int)block.Prefab.Type, block.name);
+                    BlockCost b = block.ToBlockCost();
+                    if (b != null)
+                    {
+                        AddValues(b);
+                    }
+                    else
+                    {
+                        Debug.Log($"Unknown block : {block.Prefab.Type} : {block.Prefab.name}");
+                    }
                 }
                 string cost = CostCombine();
                 ToDebug(cost);
@@ -104,61 +112,49 @@ namespace NEE
                 for (int i = 0; i < blocks.Count; i++)
                 {
                     Block block = blocks[i];
-                    ProceedBlockByType(block.Prefab.Type, block.Prefab.Name);
+                    BlockCost b = block.ToBlockCost();
+                    if (b != null)
+                    {
+                        AddValues(b);
+                    }
+                    else
+                    {
+                        Debug.Log($"Unknown block : {block.Prefab.Type} : {block.Prefab.Name}");
+                    }
                 }
-
                 string cost = CostCombine();
                 ToDebug(cost);
             }
 
-            void ProceedBlockByType(int type, string blockName)
+            void AddValues(BlockCost b)
             {
-                BlockCost b;
-                if (Consts.BlocksDict.TryGetValue(type, out b))
+                if (isRemoving && b.type == blck.ToBlockCost().type)
                 {
-                    AddValues();
+                    isRemoving = false;
+                    return;
                 }
-                else
-                {
-                    //try block name
-                    if (blockName.Contains(Consts.ModID))
-                    {
-                        string str = blockName.Substring(blockName.Length - 4);
-                        if (int.TryParse(str, out type))
-                        {
-                            if (Consts.BlocksDict.TryGetValue(type, out b))
-                            {
-                                AddValues();
-                                return;
-                            }
-                        }
-                    }
-                    Debug.Log($"unknown block type: {type} -> {blockName}");
-                }
-
-                void AddValues()
-                {
-                    if (isRemoving && type == blck.Prefab.Type)
-                    {
-                        isRemoving = false;
-                        return;
-                    }
-                    sumGold += b.costGold;
-                    sumSteel += b.costSteel;
-                    sumWood += b.costWood;
-                    sumFuel += b.costFuel;
-                    sumFabric += b.costFabric;
-                    sumFuelCount += b.fuelCount;
-                }
+                sumGold += b.costGold;
+                sumSteel += b.costSteel;
+                sumWood += b.costWood;
+                sumFuel += b.costFuel;
+                sumFabric += b.costFabric;
+                sumFuelCount += b.fuelCount;
             }
 
             string CostCombine()
             {
+
+                float sec = 0;
+                if (sumFuel != 0)
+                {
+                    sec = sumFuelCount / sumFuel;
+                }
+                TimeSpan t = TimeSpan.FromSeconds(Math.Truncate(sec));
                 return $"<b>{Time.time:0.00} Machine cost:</b>\n" +
                        $"<color=#FFD700>Gold:</color> {sumGold}\n" +
                        $"<color=#B0B0B0>Steel:</color> {sumSteel}\n" +
                        $"<color=#3b2715>Wood:</color> {sumWood}\n" +
-                       $"<color=#FF6A00>Fuel consumption:</color> {sumFuel}\n" +
+                       $"<color=#FF6A00>Fuel consumption:</color> {sumFuel:0.00} [{Math.Truncate(t.TotalMinutes):00}:{t.Seconds:00}] \n" +
                        $"<color=#C0A0FF>Fabric:</color> {sumFabric}\n" +
                        $"<color=#ff984f>Fuel count:</color> {sumFuelCount}\n";
             }
@@ -171,12 +167,56 @@ namespace NEE
 
         private void EventsOnSimulationToggle(bool simulationIsOn)
         {
-        }
 
+        }
     }
 
     public static class Ext
     {
+        public static BlockCost ToBlockCost(this Block block)
+        {
+            BlockCost b;
+            if (Consts.BlocksDict.TryGetValue(block.Prefab.Type, out b))
+            {
+                return b;
+            }
+            string nm = block.Prefab.Name;
+            if (nm.Contains(Consts.ModID))
+            {
+                string str = nm.Substring(nm.Length - 4);
+                if (int.TryParse(str, out int type))
+                {
+                    if (Consts.BlocksDict.TryGetValue(type, out b))
+                    {
+                        return b;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public static BlockCost ToBlockCost(this BlockBehaviour block)
+        {
+            BlockCost b;
+            if (Consts.BlocksDict.TryGetValue((int)block.Prefab.Type, out b))
+            {
+                return b;
+            }
+            string nm = block.Prefab.name;
+            if (nm.Contains(Consts.ModID))
+            {
+                string str = nm.Substring(nm.Length - 4);
+                if (int.TryParse(str, out int type))
+                {
+                    if (Consts.BlocksDict.TryGetValue(type, out b))
+                    {
+                        return b;
+                    }
+                }
+            }
+            return null;
+        }
+
         public static void ToChat(this string text, int saymode = 1, MPTeam team = MPTeam.Red)
         {
             IChatController chatController = ReferenceMaster.ChatController;
@@ -341,7 +381,8 @@ namespace NEE
             { 25, new BlockCost() { type = 25, costGold = 6, costSteel = 1, costWood = 1, costFabric = 3, costFuel = 0 } }, // Wing 
             { 34, new BlockCost() { type = 34, costGold = 4, costSteel = 0, costWood = 1, costFabric = 3, costFuel = 0 } }, // Wing Panel 
             { 35, new BlockCost() { type = 35, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // Ballast 
-            { 1050, new BlockCost() { type = 1050, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0, fuelCount = 1000 } }, // fuel tank
+            { 1050, new BlockCost() { type = 1050, costGold = 5, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0, fuelCount = 1000 } }, // fuel tank
+            { 1051, new BlockCost() { type = 1051, costGold = 5, costSteel = 1, costWood = 0, costFabric = 0, costFuel = 0 } }, // fuel tank
             { 43, new BlockCost() { type = 43, costGold = 3, costSteel = 0, costWood = 0, costFabric = 2, costFuel = 0 } }, // Balloon 
             { 74, new BlockCost() { type = 74, costGold = 30, costSteel = 0, costWood = 3, costFabric = 15, costFuel = 3.5f } }, // Hot Air Balloon 
             { 65, new BlockCost() { type = 65, costGold = 6, costSteel = 1, costWood = 1, costFabric = 0, costFuel = 0 } }, // Sensor 

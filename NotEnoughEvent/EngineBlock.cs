@@ -2,12 +2,12 @@
 
 namespace NEE.Blocks
 {
-    public class FuelTank : Modding.BlockScript
+    public class EngineBlock : Modding.BlockScript
     {
         public override void OnBlockPlaced()
         {
             base.OnBlockPlaced();
-            Debug.Log("FuelTank OnBlockPlaced");
+            Debug.Log("Engine OnBlockPlaced");
         }
     }
 }

@@ -26,6 +26,7 @@ namespace NEE.Blocks
         }
 
         private MKey[] keys;
+        private Block[] fuelableBlocks;
 
         public override void OnSimulateStart()
         {
@@ -34,6 +35,7 @@ namespace NEE.Blocks
 
             ReadOnlyCollection<Block> blocks = Machine.SimulationBlocks;
             HashSet<MKey> keysHashSet = new HashSet<MKey>();
+            List<Block> blks = new List<Block>();
             foreach (Block block in blocks)
             {
                 List<MKey> keyList = block.InternalObject.KeyList;
@@ -46,11 +48,16 @@ namespace NEE.Blocks
                 if (cost != null)
                 {
                     fuelCount += cost.fuelCount;
-                    fuelConsumption += cost.costFuel;
+                    fuelConsumption += cost.fuelConsumption;
+                }
+
+                if (block.IsFuelable())
+                {
+                    blks.Add(block);
                 }
             }
             keys = keysHashSet.ToArray();
-
+            fuelableBlocks = blks.ToArray();
             maxFuel = fuelCount;
             criticalFuelLevel = maxFuel * 0.1f;
 
@@ -78,17 +85,38 @@ namespace NEE.Blocks
                 return;
             }
 
-            bool isHeld = false;
+            if (visualUpdateTime < Time.time)
+            {
+                UpdateVisual();
+                visualUpdateTime = Time.time + VISUAL_RATE_TIME;
+            }
+
+            if (isDisabled)
+            {
+                return;
+            }
+
+            bool isFuelConsumption = false;
+            for (int i = 0; i < fuelableBlocks.Length; i++)
+            {
+                if (fuelableBlocks[i].IsFuelConsumptionNow())
+                {
+                    isFuelConsumption = true;
+                    goto fuelPart;
+                }
+            }
+
             for (int i = 0; i < keys.Length; i++)
             {
                 if (keys[i].IsHeld)
                 {
-                    isHeld = true;
-                    break;
+                    isFuelConsumption = true;
+                    goto fuelPart;
                 }
             }
 
-            if (isHeld && !isDisabled)
+            fuelPart:
+            if (isFuelConsumption)
             {
                 fuelCount -= fuelConsumption * Time.deltaTime;
                 if (fuelCount < 0)
@@ -97,12 +125,6 @@ namespace NEE.Blocks
                     DisableAll();
                     isDisabled = true;
                 }
-            }
-
-            if (visualUpdateTime < Time.time)
-            {
-                UpdateVisual();
-                visualUpdateTime = Time.time + VISUAL_RATE_TIME;
             }
         }
 
@@ -123,11 +145,82 @@ namespace NEE.Blocks
             ReadOnlyCollection<Block> blocks = Machine.SimulationBlocks;
             foreach (Block block in blocks)
             {
-                List<MKey> keyList = block.InternalObject.KeyList;
-                foreach (MKey mKey in keyList)
-                {
-                    mKey.ignored = true;
-                }
+                block.TryStop();
+            }
+        }
+    }
+
+    public static class KeysControlExtension
+    {
+        public static bool IsFuelable(this Block block)
+        {
+            return block.ToBlockCost().fuelConsumption > 0;
+        }
+
+        public static bool IsFuelConsumptionNow(this Block block)
+        {
+            SteeringWheel steeringWheel = block.InternalObject as SteeringWheel;
+            if (steeringWheel != null)
+            {
+                return steeringWheel.AutomaticToggle.IsActive;
+            }
+
+            CogMotorControllerHinge cog = block.InternalObject as CogMotorControllerHinge;
+            if (cog != null)
+            {
+                return cog.AutomaticToggle.IsActive || cog.Input != 0;
+            }
+
+            FlyingController fly = block.InternalObject as FlyingController;
+            if (fly != null)
+            {
+                return fly.AutomaticToggle.IsActive || fly.flying;
+            }
+
+            return false;
+        }
+
+        public static void TryStop(this Block block)
+        {
+            List<MKey> keyList = block.InternalObject.KeyList;
+            foreach (MKey mKey in keyList)
+            {
+                mKey.Ignored = true;
+            }
+
+            SteeringWheel steer = block.InternalObject as SteeringWheel;
+            if (steer != null)
+            {
+                steer.targetAngleMode = false;
+                steer.AutomaticToggle.IsActive = false;
+                steer.UpdateBlock();
+                return;
+            }
+
+            CogMotorControllerHinge cog = block.InternalObject as CogMotorControllerHinge;
+            if (cog != null)
+            {
+                cog.motor.freeSpin = false;
+                cog.Input = 0;
+                cog.AutomaticToggle.IsActive = false;
+                cog.UpdateBlock();
+                return;
+            }
+
+            FlyingController fly = block.InternalObject as FlyingController;
+            if (fly != null)
+            {
+                fly.canFly = false;
+                fly.UpdateBlock();
+                return;
+            }
+
+            SqrBalloonController bal = block.InternalObject as SqrBalloonController;
+            if (bal != null)
+            {
+                bal.keyInputSpeed = 0f;
+                bal.UpdateBlock();
+                return;
             }
         }
     }

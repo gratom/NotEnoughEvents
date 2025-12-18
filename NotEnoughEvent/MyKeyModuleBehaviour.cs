@@ -68,6 +68,16 @@ namespace NEE.Blocks
         {
         }
 
+        public override void OnReload()
+        {
+            // float countOfNeededFuel = maxFuel - fuelCount;
+            // int goldPrice = (int)(Math.Floor(countOfNeededFuel * Consts.FUEL_COST) + 1);
+            // if (goldPrice < StaticRes.Data.gold)
+            // {
+            //     StaticRes.Data.gold -= goldPrice;
+            // }
+        }
+
         private float maxFuel = 0;
         private float fuelCount = 0;
         private float criticalFuelLevel = 0;

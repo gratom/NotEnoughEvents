@@ -1,5 +1,9 @@
 ﻿using System;
+using System.Linq;
 using Modding;
+using Modding.Blocks;
+using Modding.Common;
+using NEE.Blocks;
 using UnityEngine;
 
 namespace NEE
@@ -81,33 +85,47 @@ namespace NEE
             }
             GUILayout.EndHorizontal();
 
-
             GUILayout.Space(10);
             GUILayout.Label(currentText, textStyle);
             int goldPriceFuel = (int)(Math.Floor(MainEventer.Instance.machineFuel * Consts.FUEL_COST) + 1);
             int amortization = (int)(Math.Floor(MainEventer.Instance.machineGold * Consts.AMORTIZATION) + 1);
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button($"Pay fuel + amortization [{goldPriceFuel + amortization}g]"))
             {
                 StaticRes.Data.gold -= goldPriceFuel + amortization;
             }
+            // if (StatMaster.SimulationState == SimulationState.GlobalSimulation || StatMaster.SimulationState == SimulationState.LocalSimulation)
+            // {
+            //     if (GUILayout.Button($"Pay fuel [{goldPriceFuel}g]"))
+            //     {
+            //         Block b = Player.GetLocalPlayer().Machine.SimulationBlocks.FirstOrDefault(x => x.ToBlockCost().type == 1051);
+            //         if (b != null)
+            //         {
+            //             Debug.Log( $"script : {b.BlockScript.GetType()} | internal : {b.InternalObject.GetType()} | ");
+            //             // StaticRes.Data.gold -= goldPriceFuel;
+            //             // (b.InternalObject as EngineBlock)
+            //         }
+            //     }
+            // }
+            GUILayout.EndHorizontal();
 
             GUILayout.Space(10);
             GUILayout.Label("Random orders");
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Ground"))
             {
-                
+
             }
             if (GUILayout.Button("Water"))
             {
-                
+
             }
             if (GUILayout.Button("Air"))
             {
-                
+
             }
             GUILayout.EndHorizontal();
-            
+
             GUI.DragWindow();
         }
 

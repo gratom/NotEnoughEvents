@@ -100,11 +100,6 @@ namespace NEE
             machineSteel = (int)sumSteel;
             machineFabric = (int)sumFabric;
             machineFuel = (int)sumFuelCount;
-            
-            //smth else
-            if (!gui.IsFixed)
-            {
-            }
 
 
             void Solo()

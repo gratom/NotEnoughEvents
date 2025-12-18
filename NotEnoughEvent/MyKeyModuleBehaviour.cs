@@ -109,7 +109,7 @@ namespace NEE.Blocks
             bool isFuelConsumption = false;
             for (int i = 0; i < fuelableBlocks.Length; i++)
             {
-                if (fuelableBlocks[i].IsFuelConsumptionNow())
+                if (KeysControlExtension.IsFuelConsumptionNow(fuelableBlocks[i]))
                 {
                     isFuelConsumption = true;
                     goto fuelPart;
@@ -164,25 +164,30 @@ namespace NEE.Blocks
     {
         public static bool IsFuelable(this Block block)
         {
-            return block.ToBlockCost().fuelConsumption > 0;
+            return block.ToBlockCost()?.fuelConsumption > 0;
         }
 
         public static bool IsFuelConsumptionNow(this Block block)
         {
+            if (block == null || block.InternalObject == null)
+            {
+                return false;
+            }
+
             SteeringWheel steeringWheel = block.InternalObject as SteeringWheel;
             if (steeringWheel != null)
             {
-                return steeringWheel.AutomaticToggle.IsActive;
+                return steeringWheel.AutomaticToggle?.IsActive ?? false;
             }
 
             CogMotorControllerHinge cog = block.InternalObject as CogMotorControllerHinge;
-            if (cog != null)
+            if (cog)
             {
                 return cog.AutomaticToggle.IsActive || cog.Input != 0;
             }
 
             FlyingController fly = block.InternalObject as FlyingController;
-            if (fly != null)
+            if (fly)
             {
                 return fly.AutomaticToggle.IsActive || fly.flying;
             }
@@ -202,7 +207,10 @@ namespace NEE.Blocks
             if (steer != null)
             {
                 steer.targetAngleMode = false;
-                steer.AutomaticToggle.IsActive = false;
+                if (steer.AutomaticToggle != null)
+                {
+                    steer.AutomaticToggle.IsActive = false;
+                }
                 steer.UpdateBlock();
                 return;
             }

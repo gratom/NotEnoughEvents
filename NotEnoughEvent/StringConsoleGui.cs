@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using InternalModding.Blocks;
 using Modding;
 using Modding.Blocks;
 using Modding.Common;
@@ -36,6 +39,42 @@ namespace NEE
             currentText = str ?? string.Empty;
         }
 
+        private EngineBlock cachedEngineBlock;
+
+        public void CacheEngineBlock()
+        {
+            if (StatMaster.isMP)
+            {
+                ReadOnlyCollection<Block> blocks = Player.GetLocalPlayer().Machine.SimulationBlocks;
+                for (int i = 0; i < blocks.Count; i++)
+                {
+                    if (blocks[i].ToBlockCost().type == 1051)
+                    {
+                        cachedEngineBlock = blocks[i].InternalObject.gameObject.GetComponent<EngineBlock>();
+                    }
+                }
+            }
+            else
+            {
+                List<BlockBehaviour> blocks = Machine.Active().SimulationBlocks;
+                for (int i = 0; i < blocks.Count; i++)
+                {
+                    if (blocks[i].ToBlockCost()?.type == 1051)
+                    {
+                        cachedEngineBlock = blocks[i].gameObject.GetComponent<EngineBlock>();
+                    }
+                }
+            }
+        }
+
+        public void UpdateState()
+        {
+            if (cachedEngineBlock != null)
+            {
+                SetString(cachedEngineBlock.machineEngineOutput);
+            }
+        }
+
         public void OnGUI()
         {
             if (StatMaster.isMainMenu)
@@ -66,7 +105,6 @@ namespace NEE
             );
             GUILayout.EndHorizontal();
 
-
             GUILayout.Space(5);
             GUILayout.BeginHorizontal();
             if (isFixed)
@@ -94,6 +132,7 @@ namespace NEE
             {
                 StaticRes.Data.gold -= goldPriceFuel + amortization;
             }
+
             // if (StatMaster.SimulationState == SimulationState.GlobalSimulation || StatMaster.SimulationState == SimulationState.LocalSimulation)
             // {
             //     if (GUILayout.Button($"Pay fuel [{goldPriceFuel}g]"))
@@ -126,6 +165,21 @@ namespace NEE
             }
             GUILayout.EndHorizontal();
 
+            if (GUILayout.Button("Patch triggers"))
+            {
+                List<InsigniaTrigger> list = Ext.FindAllWithComponent<InsigniaTrigger>();
+                foreach (InsigniaTrigger trigger in list)
+                {
+                    if (trigger.logicName.Value == "REFRESH")
+                    {
+                        if (trigger.gameObject.GetComponent<TriggerExtension>() == null)
+                        {
+                            trigger.gameObject.AddComponent<TriggerExtension>();
+                        }
+                    }
+                }
+            }
+
             GUI.DragWindow();
         }
 
@@ -153,6 +207,7 @@ namespace NEE
             GUILayout.Label(value.ToString(), GUILayout.Width(60));
             GUILayout.Space(15);
         }
+
 
     }
 }

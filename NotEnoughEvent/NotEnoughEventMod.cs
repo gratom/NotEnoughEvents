@@ -22,21 +22,11 @@ namespace NEE
                 return;
             }
 
-            InitModules();
-
             loader = new GameObject("NotEnoughEvent");
             UnityEngine.Object.DontDestroyOnLoad(loader);
             MainEventer eventer = loader.AddComponent<MainEventer>();
             StringConsoleGui gui = loader.AddComponent<StringConsoleGui>();
             eventer.gui = gui;
-        }
-
-        private void InitModules()
-        {
-            CustomModules.AddBlockModule<MyKeyModule, MyKeyModuleBehaviour>(
-                "MyKeyModule",
-                false
-            );
         }
     }
 
@@ -74,7 +64,7 @@ namespace NEE
         public int machineFabric { get; private set; }
 
         public int machineFuel { get; private set; }
-        
+
         private void UpdateBlocksCost(Block blck, bool isRemoving)
         {
             float sumGold = 0;

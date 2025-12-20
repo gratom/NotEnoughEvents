@@ -67,6 +67,8 @@ namespace NEE
 
         private void UpdateBlocksCost(Block blck, bool isRemoving)
         {
+            BlockCost newBlockCost = Ext.ToBlockCost(blck);
+
             float sumGold = 0;
             float sumWood = 0;
             float sumSteel = 0;
@@ -135,10 +137,13 @@ namespace NEE
 
             void AddValues(BlockCost b)
             {
-                if (isRemoving && b.type == blck.ToBlockCost().type)
+                if (blck != null && newBlockCost != null)
                 {
-                    isRemoving = false;
-                    return;
+                    if (isRemoving && b.type == newBlockCost.type)
+                    {
+                        isRemoving = false;
+                        return;
+                    }
                 }
                 sumGold += b.costGold;
                 sumSteel += b.costSteel;

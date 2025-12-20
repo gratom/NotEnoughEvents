@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using SRF;
 using UnityEngine;
 
 namespace NEE
@@ -27,11 +26,11 @@ namespace NEE
                 return null;
             }
 
-            City c1 = cities.Random();
+            City c1 = cities[Random.Range(0, cities.Count)];
             cities.Remove(c1);
-            City c2 = cities.Random();
+            City c2 = cities[Random.Range(0, cities.Count)];
 
-            Product p = Consts.products[c1.products.Random()];
+            Product p = Consts.products[c1.products[Random.Range(0, c1.products.Length)]];
 
             int sum = Random.Range(maxSum / 2, maxSum);
 
@@ -103,22 +102,6 @@ namespace NEE
     {
         public PlaceTag placeTag;
         public int routeIndex;
-
-        public static bool operator ==(Route left, Route right)
-        {
-            return left.placeTag == right.placeTag
-                   && left.routeIndex == right.routeIndex;
-        }
-
-        public static bool operator !=(Route left, Route right)
-        {
-            return !(left == right);
-        }
-
-        public override bool Equals(object obj)
-        {
-            return obj is Route other && this == other;
-        }
     }
 
 }

@@ -93,6 +93,10 @@ namespace NEE
 
         public static BlockCost ToBlockCost(this Block block)
         {
+            if (block == null)
+            {
+                return null;
+            }
             BlockCost b;
             if (Consts.BlocksDict.TryGetValue(block.Prefab.Type, out b))
             {

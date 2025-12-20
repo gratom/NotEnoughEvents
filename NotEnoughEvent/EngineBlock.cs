@@ -24,7 +24,7 @@ namespace NEE.Blocks
         private float fuelCount = 0;
         private float criticalFuelLevel = 0;
 
-        private float fuelConsumption = 1;
+        private float fuelConsumption = 0;
         private bool isDisabled = false;
 
         private float visualUpdateTime = 0;
@@ -49,22 +49,22 @@ namespace NEE.Blocks
             List<Block> blks = new List<Block>();
             foreach (Block block in blocks)
             {
-                if (block.IsFuelable())
+                BlockCost cost = block.ToBlockCost();
+                if (cost != null)
                 {
-                    List<MKey> keyList = block.InternalObject.KeyList;
-                    foreach (MKey mKey in keyList)
+                    if (cost.fuelConsumption > 0 || cost.fuelCount > 0)
                     {
-                        keysHashSet.Add(mKey);
-                    }
+                        List<MKey> keyList = block.InternalObject.KeyList;
+                        foreach (MKey mKey in keyList)
+                        {
+                            keysHashSet.Add(mKey);
+                        }
 
-                    BlockCost cost = block.ToBlockCost();
-                    if (cost != null)
-                    {
                         fuelCount += cost.fuelCount;
                         fuelConsumption += cost.fuelConsumption;
-                    }
 
-                    blks.Add(block);
+                        blks.Add(block);
+                    }
                 }
             }
             keys = keysHashSet.ToArray();

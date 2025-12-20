@@ -93,6 +93,9 @@ namespace NEE
         public bool IsFixed => isFixed;
         private bool isFixed = false;
 
+        private int moneyMaxOrder = 0;
+        private Order order = null;
+
         private void DrawWindow(int id)
         {
             GUILayout.BeginHorizontal();
@@ -150,21 +153,38 @@ namespace NEE
 
             GUILayout.Space(10);
             GUILayout.Label("Random orders");
+            DrawResourceField("G", ref moneyMaxOrder);
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Ground"))
+            if (GUILayout.Button("G0", GUILayout.Width(30)))
             {
-
+                StaticRes.Data.gold--;
+                order = OrderRandomizer.GenerateRandomOrder(PlaceTag.ground, 0, moneyMaxOrder);
             }
-            if (GUILayout.Button("Water"))
+            if (GUILayout.Button("G1", GUILayout.Width(30)))
             {
-
+                StaticRes.Data.gold--;
+                order = OrderRandomizer.GenerateRandomOrder(PlaceTag.ground, 1, moneyMaxOrder);
             }
-            if (GUILayout.Button("Air"))
+            if (GUILayout.Button("G2", GUILayout.Width(30)))
             {
-
+                StaticRes.Data.gold--;
+                order = OrderRandomizer.GenerateRandomOrder(PlaceTag.ground, 2, moneyMaxOrder);
+            }
+            if (GUILayout.Button("Water", GUILayout.Width(100)))
+            {
+                StaticRes.Data.gold -= 2;
+                order = OrderRandomizer.GenerateRandomOrder(PlaceTag.water, 0, moneyMaxOrder);
+            }
+            if (GUILayout.Button("Air", GUILayout.Width(45)))
+            {
+                StaticRes.Data.gold -= 2;
+                order = OrderRandomizer.GenerateRandomOrder(PlaceTag.air, 0, moneyMaxOrder);
             }
             GUILayout.EndHorizontal();
 
+            DrawOrder(order, textStyle);
+
+            GUILayout.Space(10);
             if (GUILayout.Button("Patch triggers"))
             {
                 List<InsigniaTrigger> list = Ext.FindAllWithComponent<InsigniaTrigger>();
@@ -181,6 +201,51 @@ namespace NEE
             }
 
             GUI.DragWindow();
+        }
+
+        private void DrawOrder(Order order, GUIStyle textStyle)
+        {
+            if (order == null)
+            {
+                GUILayout.Label("<i>No active order</i>", textStyle);
+                return;
+            }
+
+            // Маршрут
+            GUILayout.Label(
+                $"<b>{order.from.name}</b> → <b>{order.to.name}</b>",
+                textStyle
+            );
+
+            // Товар
+            GUILayout.Label(
+                $"<color=#C0E0FF>Product:</color> {order.product.name} × {order.productCount}",
+                textStyle
+            );
+
+            // Цены
+            GUILayout.Label(
+                $"<color=#FFD700>Buy:</color> {order.totalBuyPrice}   " +
+                $"<color=#7CFC00>Sell:</color> {order.totalSellPrice}",
+                textStyle
+            );
+
+            // Бонус
+            if (order.additionPrice != 0)
+            {
+                GUILayout.Label(
+                    $"<color=#87CEFA>Bonus:</color> {order.additionPrice}",
+                    textStyle
+                );
+            }
+
+            // Прибыль
+            Color profitColor = new Color(0.5f, 1f, 0.5f);
+
+            GUILayout.Label(
+                $"<b><color=#{ColorUtility.ToHtmlStringRGB(profitColor)}>Profit: {order.totalProfit}</color></b>",
+                textStyle
+            );
         }
 
         private void DrawResourceField(string label, ref int value)

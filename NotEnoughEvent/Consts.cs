@@ -132,7 +132,8 @@ namespace NEE
                     new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
                     new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
                 },
-                pos = new Vector2(1450, 1125)
+                pos = new Vector2(1450, 1125),
+                products = new[] { 0, 1, 2 }
             },
             new City()
             {
@@ -142,7 +143,8 @@ namespace NEE
                     new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
                     new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
                 },
-                pos = new Vector2(1075, 1400)
+                pos = new Vector2(1075, 1400),
+                products = new[] { 0, 1 }
             },
             new City()
             {
@@ -153,7 +155,8 @@ namespace NEE
                     new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
                     new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
                 },
-                pos = new Vector2(1425, 825)
+                pos = new Vector2(1425, 825),
+                products = new[] { 0 }
             },
             new City()
             {
@@ -163,7 +166,8 @@ namespace NEE
                     new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
                     new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
                 },
-                pos = new Vector2(780, 1280)
+                pos = new Vector2(780, 1280),
+                products = new[] { 0, 1 }
             },
             new City()
             {
@@ -174,7 +178,8 @@ namespace NEE
                     new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
                     new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
                 },
-                pos = new Vector2(925, 900)
+                pos = new Vector2(925, 900),
+                products = new[] { 0, 1 }
             },
             new City()
             {
@@ -184,7 +189,8 @@ namespace NEE
                     new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
                     new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
                 },
-                pos = new Vector2(1150, 1100)
+                pos = new Vector2(1150, 1100),
+                products = new[] { 1 }
             },
             new City()
             {
@@ -195,7 +201,8 @@ namespace NEE
                     new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
                     new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
                 },
-                pos = new Vector2(400, 950)
+                pos = new Vector2(400, 950),
+                products = new[] { 1, 2 }
             }
         };
 

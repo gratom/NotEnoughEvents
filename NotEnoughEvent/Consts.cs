@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using GameGrind;
+using UnityEngine;
 
 namespace NEE
 {
@@ -111,6 +113,115 @@ namespace NEE
             { 81, new BlockCost() { type = 81, costGold = 1, costSteel = 0, costWood = 1, costFabric = 0, fuelConsumption = 0 } }, //paddle (весло)
             { 78, new BlockCost() { type = 78, costGold = 12, costSteel = 1, costWood = 4, costFabric = 10, fuelConsumption = 0 } }, //Sail
             { 84, new BlockCost() { type = 84, costGold = 10, costSteel = 3, costWood = 3, costFabric = 0, fuelConsumption = 0 } } //harpoon
+        };
+
+        public static City ToCity(this int index)
+        {
+            return Cities[index];
+        }
+
+        public static List<City> Cities = new List<City>()
+        {
+
+            new City()
+            {
+                id = 0, name = "Централий",
+                routes = new[]
+                {
+                    new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
+                },
+                pos = new Vector2(1450, 1125)
+            },
+            new City()
+            {
+                id = 1, name = "Башений",
+                routes = new[]
+                {
+                    new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
+                },
+                pos = new Vector2(1075, 1400)
+            },
+            new City()
+            {
+                id = 2, name = "Ровный",
+                routes = new[]
+                {
+                    new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
+                },
+                pos = new Vector2(1425, 825)
+            },
+            new City()
+            {
+                id = 3, name = "Круглый",
+                routes = new[]
+                {
+                    new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
+                },
+                pos = new Vector2(780, 1280)
+            },
+            new City()
+            {
+                id = 4, name = "Старая гавань",
+                routes = new[]
+                {
+                    new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
+                },
+                pos = new Vector2(925, 900)
+            },
+            new City()
+            {
+                id = 5, name = "Шахта",
+                routes = new[]
+                {
+                    new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
+                },
+                pos = new Vector2(1150, 1100)
+            },
+            new City()
+            {
+                id = 6, name = "Далекий",
+                routes = new[]
+                {
+                    new Route() { placeTag = PlaceTag.ground, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.water, routeIndex = 0 },
+                    new Route() { placeTag = PlaceTag.air, routeIndex = 0 }
+                },
+                pos = new Vector2(400, 950)
+            }
+        };
+
+        public static Product[] products = new Product[]
+        {
+            new Product()
+            {
+                id = 0,
+                name = "Доски",
+                priceBuy = 2,
+                priceSell = 3
+            },
+            new Product()
+            {
+                id = 1,
+                name = "Руда",
+                priceBuy = 5,
+                priceSell = 7
+            },
+            new Product()
+            {
+                id = 2,
+                name = "Ткань",
+                priceBuy = 5,
+                priceSell = 6
+            }
         };
     }
 }
